@@ -125,15 +125,15 @@ class FacebookScraper:
     # Tourism-Specific Methods
     # ============================================
 
-    def scrape_page_for_tourism(self, page_url: str, page_id: int = None,
+    def scrape_group_for_tourism(self, group_url: str, group_id: int = None,
                                 auto_categorize: bool = True) -> Dict[str, Any]:
         """
-        Scrape Facebook page and extract tourism-related content
+        Scrape Facebook group and extract tourism-related content
         Stores in both SQLite and ChromaDB
         """
         results = {
             'success': False,
-            'page_url': page_url,
+            'group_url': group_url,
             'posts_scraped': 0,
             'posts_stored': 0,
             'images_found': 0,
@@ -141,13 +141,13 @@ class FacebookScraper:
         }
 
         try:
-            # Get page posts
-            data = self.retrieve_page_posts(page_url)
+            # Get group posts (using page-posts endpoint - works for both pages and groups)
+            data = self.retrieve_page_posts(group_url)
 
             if not data or 'data' not in data:
                 results['errors'].append("No data returned from API")
                 db.add_log("ERROR", "FacebookScraper",
-                         "No data returned from API", f"Page: {page_url}")
+                         "No data returned from API", f"Group: {group_url}")
                 return results
 
             posts = data.get('data', [])
@@ -187,7 +187,7 @@ class FacebookScraper:
                     # Store in SQLite metadata
                     metadata = {
                         'post_id': post_id,
-                        'page_id': page_id,
+                        'group_id': group_id,
                         'post_url': post_url,
                         'author': author,
                         'posted_date': posted_date,
@@ -205,7 +205,7 @@ class FacebookScraper:
                     vector_data = {
                         'post_id': post_id,
                         'content': post_content,
-                        'page_url': page_url,
+                        'group_url': group_url,
                         'author': author,
                         'posted_date': posted_date,
                         'location': location,
@@ -237,26 +237,26 @@ class FacebookScraper:
                     results['errors'].append(f"Error processing post: {str(e)}")
                     continue
 
-            # Update page metadata
-            if page_id:
-                db.update_facebook_page(
-                    page_id,
+            # Update group metadata
+            if group_id:
+                db.update_facebook_group(
+                    group_id,
                     last_scraped=datetime.now().isoformat(),
                     total_posts_scraped=db.get_connection().execute(
-                        "SELECT COUNT(*) FROM posts_metadata WHERE page_id = ?",
-                        (page_id,)
+                        "SELECT COUNT(*) FROM posts_metadata WHERE group_id = ?",
+                        (group_id,)
                     ).fetchone()[0]
                 )
 
             results['success'] = True
             db.add_log("INFO", "FacebookScraper",
                      f"Successfully scraped {results['posts_stored']} posts",
-                     f"Page: {page_url}")
+                     f"Group: {group_url}")
 
         except Exception as e:
             results['errors'].append(f"Scraping error: {str(e)}")
             db.add_log("ERROR", "FacebookScraper",
-                     f"Scraping failed: {str(e)}", f"Page: {page_url}")
+                     f"Scraping failed: {str(e)}", f"Group: {group_url}")
 
         return results
 
@@ -300,19 +300,19 @@ class FacebookScraper:
 
         return ''
 
-    def scrape_multiple_pages(self, page_ids: List[int] = None,
+    def scrape_multiple_groups(self, group_ids: List[int] = None,
                              progress_callback=None) -> Dict[str, Any]:
-        """Scrape multiple Facebook pages"""
-        if page_ids:
-            pages = [db.get_connection().execute(
-                "SELECT * FROM facebook_pages WHERE id = ?", (pid,)
-            ).fetchone() for pid in page_ids]
-            pages = [dict(p) for p in pages if p]
+        """Scrape multiple Facebook groups"""
+        if group_ids:
+            groups = [db.get_connection().execute(
+                "SELECT * FROM facebook_groups WHERE id = ?", (gid,)
+            ).fetchone() for gid in group_ids]
+            groups = [dict(g) for g in groups if g]
         else:
-            pages = db.get_facebook_pages(active_only=True)
+            groups = db.get_facebook_groups(active_only=True)
 
         results = {
-            'total_pages': len(pages),
+            'total_groups': len(groups),
             'successful': 0,
             'failed': 0,
             'total_posts': 0,
@@ -320,22 +320,22 @@ class FacebookScraper:
             'errors': []
         }
 
-        for i, page in enumerate(pages):
+        for i, group in enumerate(groups):
             if progress_callback:
-                progress_callback(i + 1, len(pages), page['page_name'])
+                progress_callback(i + 1, len(groups), group['group_name'])
 
-            page_result = self.scrape_page_for_tourism(
-                page['page_url'],
-                page['id']
+            group_result = self.scrape_group_for_tourism(
+                group['group_url'],
+                group['id']
             )
 
-            if page_result['success']:
+            if group_result['success']:
                 results['successful'] += 1
-                results['total_posts'] += page_result['posts_stored']
-                results['total_images'] += page_result['images_found']
+                results['total_posts'] += group_result['posts_stored']
+                results['total_images'] += group_result['images_found']
             else:
                 results['failed'] += 1
-                results['errors'].extend(page_result['errors'])
+                results['errors'].extend(group_result['errors'])
 
             # Rate limiting
             time.sleep(2)

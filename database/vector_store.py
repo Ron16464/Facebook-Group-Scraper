@@ -49,7 +49,7 @@ class VectorStore:
         # Prepare metadata
         metadata = {
             'post_id': post_id,
-            'page_url': post_data.get('page_url', ''),
+            'group_url': post_data.get('group_url', ''),
             'author': post_data.get('author', ''),
             'posted_date': post_data.get('posted_date', ''),
             'location': post_data.get('location', ''),
@@ -88,7 +88,7 @@ class VectorStore:
 
             metadata = {
                 'post_id': post_id,
-                'page_url': post_data.get('page_url', ''),
+                'group_url': post_data.get('group_url', ''),
                 'author': post_data.get('author', ''),
                 'posted_date': post_data.get('posted_date', ''),
                 'location': post_data.get('location', ''),

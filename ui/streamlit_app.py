@@ -67,8 +67,8 @@ st.markdown("""
 
 
 # Initialize session state
-if 'page' not in st.session_state:
-    st.session_state.page = 'Dashboard'
+if 'group' not in st.session_state:
+    st.session_state.group = 'Dashboard'
 
 
 def show_dashboard():
@@ -91,8 +91,8 @@ def show_dashboard():
 
     with col1:
         st.markdown('<div class="stat-box">', unsafe_allow_html=True)
-        pages_count = len(db.get_facebook_pages())
-        st.metric("Facebook Pages", pages_count)
+        groups_count = len(db.get_facebook_groups())
+        st.metric("Facebook Groups", groups_count)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
@@ -141,54 +141,54 @@ def show_dashboard():
             st.info("No recent logs")
 
 
-def show_facebook_pages():
-    """Manage Facebook pages to scrape"""
-    st.header("📱 Facebook Pages Management")
+def show_facebook_groups():
+    """Manage Facebook groups to scrape"""
+    st.header("📱 Facebook Groups Management")
 
     # Tabs for different actions
     tab1, tab2, tab3 = st.tabs(["📋 View Pages", "➕ Add Page", "🔄 Scrape Content"])
 
     with tab1:
-        st.subheader("Configured Facebook Pages")
+        st.subheader("Configured Facebook Groups")
 
-        pages = db.get_facebook_pages(active_only=False)
+        groups = db.get_facebook_groups(active_only=False)
 
-        if pages:
-            for page in pages:
-                with st.expander(f"{'✅' if page['is_active'] else '⏸️'} {page['page_name'] or page['page_url']}", expanded=False):
+        if groups:
+            for group in groups:
+                with st.expander(f"{'✅' if group['is_active'] else '⏸️'} {group['group_name'] or group['group_url']}", expanded=False):
                     col1, col2 = st.columns([3, 1])
 
                     with col1:
-                        st.write(f"**URL:** {page['page_url']}")
-                        st.write(f"**Category:** {page['page_category'] or 'Not set'}")
-                        st.write(f"**Description:** {page['description'] or 'No description'}")
-                        st.write(f"**Posts Scraped:** {page['total_posts_scraped']}")
-                        st.write(f"**Last Scraped:** {page['last_scraped'] or 'Never'}")
+                        st.write(f"**URL:** {group['group_url']}")
+                        st.write(f"**Category:** {group['group_category'] or 'Not set'}")
+                        st.write(f"**Description:** {group['description'] or 'No description'}")
+                        st.write(f"**Posts Scraped:** {group['total_posts_scraped']}")
+                        st.write(f"**Last Scraped:** {group['last_scraped'] or 'Never'}")
 
                     with col2:
-                        if st.button("🗑️ Delete", key=f"delete_{page['id']}"):
-                            db.delete_facebook_page(page['id'])
+                        if st.button("🗑️ Delete", key=f"delete_{group['id']}"):
+                            db.delete_facebook_group(group['id'])
                             st.success("Page deleted!")
                             st.rerun()
 
-                        if page['is_active']:
-                            if st.button("⏸️ Deactivate", key=f"deactivate_{page['id']}"):
-                                db.update_facebook_page(page['id'], is_active=0)
+                        if group['is_active']:
+                            if st.button("⏸️ Deactivate", key=f"deactivate_{group['id']}"):
+                                db.update_facebook_group(group['id'], is_active=0)
                                 st.rerun()
                         else:
-                            if st.button("▶️ Activate", key=f"activate_{page['id']}"):
-                                db.update_facebook_page(page['id'], is_active=1)
+                            if st.button("▶️ Activate", key=f"activate_{group['id']}"):
+                                db.update_facebook_group(group['id'], is_active=1)
                                 st.rerun()
         else:
-            st.info("No Facebook pages configured yet. Add one in the 'Add Page' tab!")
+            st.info("No Facebook groups configured yet. Add one in the 'Add Page' tab!")
 
     with tab2:
         st.subheader("Add New Facebook Page")
 
         with st.form("add_page_form"):
-            page_url = st.text_input("Facebook Page URL*", placeholder="https://www.facebook.com/YourPage")
-            page_name = st.text_input("Page Name", placeholder="e.g., Rhodes Tourism")
-            page_category = st.selectbox("Category", [
+            group_url = st.text_input("Facebook Group URL*", placeholder="https://www.facebook.com/groups/YourGroup")
+            group_name = st.text_input("Group Name", placeholder="e.g., Rhodes Tourism")
+            group_category = st.selectbox("Category", [
                 "general", "restaurant", "hotel", "beach", "attraction",
                 "activity", "transportation", "shopping"
             ])
@@ -197,42 +197,42 @@ def show_facebook_pages():
             submit = st.form_submit_button("➕ Add Page")
 
             if submit:
-                if not page_url:
+                if not group_url:
                     st.error("Page URL is required!")
                 else:
-                    page_id = db.add_facebook_page(
-                        page_url=page_url,
-                        page_name=page_name if page_name else None,
-                        page_category=page_category,
+                    group_id = db.add_facebook_group(
+                        group_url=group_url,
+                        group_name=group_name if group_name else None,
+                        group_category=group_category,
                         description=description if description else None
                     )
 
-                    if page_id:
-                        st.success(f"✅ Page added successfully! (ID: {page_id})")
+                    if group_id:
+                        st.success(f"✅ Group added successfully! (ID: {group_id})")
                         st.balloons()
                     else:
-                        st.error("❌ Failed to add page. It may already exist.")
+                        st.error("❌ Failed to add group. It may already exist.")
 
     with tab3:
-        st.subheader("Scrape Facebook Pages")
+        st.subheader("Scrape Facebook Groups")
 
         if not settings.RAPIDAPI_KEY:
             st.error("❌ RapidAPI key not configured! Go to Settings to add it.")
         else:
-            pages = db.get_facebook_pages(active_only=True)
+            groups = db.get_facebook_groups(active_only=True)
 
-            if not pages:
-                st.warning("No active pages to scrape. Add pages first!")
+            if not groups:
+                st.warning("No active groups to scrape. Add groups first!")
             else:
-                st.write(f"**{len(pages)} active page(s) ready to scrape**")
+                st.write(f"**{len(groups)} active group(s) ready to scrape**")
 
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
-                    selected_pages = st.multiselect(
-                        "Select pages to scrape (leave empty for all):",
-                        options=[p['id'] for p in pages],
-                        format_func=lambda x: next((p['page_name'] or p['page_url'] for p in pages if p['id'] == x), str(x))
+                    selected_groups = st.multiselect(
+                        "Select groups to scrape (leave empty for all):",
+                        options=[p['id'] for p in groups],
+                        format_func=lambda x: next((p['group_name'] or p['group_url'] for p in groups if p['id'] == x), str(x))
                     )
 
                 with col2:
@@ -243,13 +243,13 @@ def show_facebook_pages():
                             progress_bar = st.progress(0)
                             status_text = st.empty()
 
-                            def update_progress(current, total, page_name):
+                            def update_progress(current, total, group_name):
                                 progress_bar.progress(current / total)
-                                status_text.text(f"Scraping {page_name}... ({current}/{total})")
+                                status_text.text(f"Scraping {group_name}... ({current}/{total})")
 
-                            page_ids = selected_pages if selected_pages else None
-                            results = scraper.scrape_multiple_pages(
-                                page_ids=page_ids,
+                            group_ids = selected_groups if selected_groups else None
+                            results = scraper.scrape_multiple_groups(
+                                group_ids=group_ids,
                                 progress_callback=update_progress
                             )
 
@@ -258,11 +258,11 @@ def show_facebook_pages():
 
                             st.markdown('<div class="success-box">', unsafe_allow_html=True)
                             st.write("**Scraping Complete!**")
-                            st.write(f"✅ Successful: {results['successful']} pages")
+                            st.write(f"✅ Successful: {results['successful']} groups")
                             st.write(f"📝 Total Posts: {results['total_posts']}")
                             st.write(f"🖼️ Total Images: {results['total_images']}")
                             if results['failed'] > 0:
-                                st.write(f"❌ Failed: {results['failed']} pages")
+                                st.write(f"❌ Failed: {results['failed']} groups")
                             st.markdown('</div>', unsafe_allow_html=True)
 
                             if results['errors']:
@@ -564,28 +564,28 @@ def main():
         st.markdown("---")
 
         if st.button("🏠 Dashboard", use_container_width=True):
-            st.session_state.page = 'Dashboard'
+            st.session_state.group = 'Dashboard'
 
-        if st.button("📱 Facebook Pages", use_container_width=True):
-            st.session_state.page = 'Facebook Pages'
+        if st.button("📱 Facebook Groups", use_container_width=True):
+            st.session_state.group = 'Facebook Groups'
 
         if st.button("✍️ Generate Articles", use_container_width=True):
-            st.session_state.page = 'Articles'
+            st.session_state.group = 'Articles'
 
         if st.button("⚙️ Settings", use_container_width=True):
-            st.session_state.page = 'Settings'
+            st.session_state.group = 'Settings'
 
         st.markdown("---")
         st.caption("Tourism Content Generator v1.0")
 
-    # Route to selected page
-    if st.session_state.page == 'Dashboard':
+    # Route to selected group
+    if st.session_state.group == 'Dashboard':
         show_dashboard()
-    elif st.session_state.page == 'Facebook Pages':
-        show_facebook_pages()
-    elif st.session_state.page == 'Articles':
+    elif st.session_state.group == 'Facebook Groups':
+        show_facebook_groups()
+    elif st.session_state.group == 'Articles':
         show_article_generator()
-    elif st.session_state.page == 'Settings':
+    elif st.session_state.group == 'Settings':
         show_settings()
 
 

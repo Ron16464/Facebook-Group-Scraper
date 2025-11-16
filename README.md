@@ -9,7 +9,7 @@ Scrape Facebook groups for tourism content, generate AI-powered articles with sm
 ## ✨ Features
 
 ### 🔍 **Multi-Source Content Scraping**
-- ✅ Scrape Facebook pages/groups for tourism content
+- ✅ Scrape Facebook groups for tourism content
 - ✅ Automatic content categorization (restaurants, hotels, beaches, activities, etc.)
 - ✅ Extract images from posts
 - ✅ Smart deduplication
@@ -41,7 +41,7 @@ Scrape Facebook groups for tourism content, generate AI-powered articles with sm
 
 ### 📊 **Beautiful Dashboard**
 - ✅ Streamlit-based UI
-- ✅ Facebook pages management (add/edit/delete)
+- ✅ Facebook groups management (add/edit/delete)
 - ✅ LLM provider management
 - ✅ Image source configuration
 - ✅ Real-time scraping progress
@@ -212,11 +212,11 @@ The dashboard will open in your browser at `http://localhost:8501`
 
 ## 💡 Usage Guide
 
-### 1. **Add Facebook Pages**
+### 1. **Add Facebook Groups**
 
-Navigate to **📱 Facebook Pages** → **Add Page** tab:
+Navigate to **📱 Facebook Groups** → **Add Page** tab:
 
-1. Enter the Facebook page URL (e.g., `https://www.facebook.com/RhodesTourism`)
+1. Enter the Facebook group URL (e.g., `https://www.facebook.com/groups/RhodesTourism`)
 2. Provide a friendly name (optional)
 3. Select category (restaurant, hotel, beach, etc.)
 4. Add description (optional)
@@ -224,9 +224,9 @@ Navigate to **📱 Facebook Pages** → **Add Page** tab:
 
 ### 2. **Scrape Content**
 
-Navigate to **📱 Facebook Pages** → **Scrape Content** tab:
+Navigate to **📱 Facebook Groups** → **Scrape Content** tab:
 
-1. Select pages to scrape (or leave empty for all active pages)
+1. Select groups to scrape (or leave empty for all active groups)
 2. Click **Start Scraping**
 3. Watch the progress bar
 4. Review results (posts scraped, images found, errors)
@@ -397,7 +397,7 @@ Based on **100 active Facebook groups**:
 → Check image source API keys in Settings
 
 ### "Scraping returns no posts"
-→ Verify Facebook page URL is public and correct
+→ Verify Facebook group URL is public and correct
 
 ### Database errors
 → Delete `data/` folder and restart to reinitialize

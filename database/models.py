@@ -30,13 +30,13 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        # Facebook pages table
+        # Facebook groups table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS facebook_pages (
+            CREATE TABLE IF NOT EXISTS facebook_groups (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                page_url TEXT UNIQUE NOT NULL,
-                page_name TEXT,
-                page_category TEXT,
+                group_url TEXT UNIQUE NOT NULL,
+                group_name TEXT,
+                group_category TEXT,
                 description TEXT,
                 is_active INTEGER DEFAULT 1,
                 last_scraped TIMESTAMP,
@@ -51,7 +51,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS posts_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id TEXT UNIQUE NOT NULL,
-                page_id INTEGER,
+                group_id INTEGER,
                 post_url TEXT,
                 author TEXT,
                 posted_date TIMESTAMP,
@@ -62,7 +62,7 @@ class Database:
                 image_count INTEGER DEFAULT 0,
                 category TEXT,
                 scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (page_id) REFERENCES facebook_pages(id)
+                FOREIGN KEY (group_id) REFERENCES facebook_groups(id)
             )
         """)
 
@@ -153,13 +153,13 @@ class Database:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scraping_schedule (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                page_id INTEGER,
+                group_id INTEGER,
                 frequency TEXT,
                 last_run TIMESTAMP,
                 next_run TIMESTAMP,
                 is_active INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (page_id) REFERENCES facebook_pages(id)
+                FOREIGN KEY (group_id) REFERENCES facebook_groups(id)
             )
         """)
 
@@ -179,19 +179,19 @@ class Database:
         conn.close()
 
     # ============================================
-    # Facebook Pages Operations
+    # Facebook Groups Operations
     # ============================================
 
-    def add_facebook_page(self, page_url: str, page_name: str = None,
-                          page_category: str = None, description: str = None) -> int:
-        """Add a new Facebook page to scrape"""
+    def add_facebook_group(self, group_url: str, group_name: str = None,
+                          group_category: str = None, description: str = None) -> int:
+        """Add a new Facebook group to scrape"""
         conn = self.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                INSERT INTO facebook_pages (page_url, page_name, page_category, description)
+                INSERT INTO facebook_groups (group_url, group_name, group_category, description)
                 VALUES (?, ?, ?, ?)
-            """, (page_url, page_name, page_category, description))
+            """, (group_url, group_name, group_category, description))
             conn.commit()
             return cursor.lastrowid
         except sqlite3.IntegrityError:
@@ -199,23 +199,23 @@ class Database:
         finally:
             conn.close()
 
-    def get_facebook_pages(self, active_only: bool = True) -> List[Dict[str, Any]]:
-        """Get all Facebook pages"""
+    def get_facebook_groups(self, active_only: bool = True) -> List[Dict[str, Any]]:
+        """Get all Facebook groups"""
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        query = "SELECT * FROM facebook_pages"
+        query = "SELECT * FROM facebook_groups"
         if active_only:
             query += " WHERE is_active = 1"
         query += " ORDER BY created_at DESC"
 
         cursor.execute(query)
-        pages = [dict(row) for row in cursor.fetchall()]
+        groups = [dict(row) for row in cursor.fetchall()]
         conn.close()
-        return pages
+        return groups
 
-    def update_facebook_page(self, page_id: int, **kwargs):
-        """Update Facebook page details"""
+    def update_facebook_group(self, group_id: int, **kwargs):
+        """Update Facebook group details"""
         conn = self.get_connection()
         cursor = conn.cursor()
 
@@ -226,18 +226,18 @@ class Database:
             values.append(value)
 
         fields.append("updated_at = CURRENT_TIMESTAMP")
-        values.append(page_id)
+        values.append(group_id)
 
-        query = f"UPDATE facebook_pages SET {', '.join(fields)} WHERE id = ?"
+        query = f"UPDATE facebook_groups SET {', '.join(fields)} WHERE id = ?"
         cursor.execute(query, values)
         conn.commit()
         conn.close()
 
-    def delete_facebook_page(self, page_id: int):
-        """Delete a Facebook page"""
+    def delete_facebook_group(self, group_id: int):
+        """Delete a Facebook group"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM facebook_pages WHERE id = ?", (page_id,))
+        cursor.execute("DELETE FROM facebook_groups WHERE id = ?", (group_id,))
         conn.commit()
         conn.close()
 
@@ -252,12 +252,12 @@ class Database:
         try:
             cursor.execute("""
                 INSERT INTO posts_metadata
-                (post_id, page_id, post_url, author, posted_date, engagement_likes,
+                (post_id, group_id, post_url, author, posted_date, engagement_likes,
                  engagement_comments, engagement_shares, has_images, image_count, category)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 post_data.get('post_id'),
-                post_data.get('page_id'),
+                post_data.get('group_id'),
                 post_data.get('post_url'),
                 post_data.get('author'),
                 post_data.get('posted_date'),
