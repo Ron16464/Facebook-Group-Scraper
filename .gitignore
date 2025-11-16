@@ -7,3 +7,39 @@ __pycache__/
 venv/
 ENV/
 env/
+
+# Environment variables (contains API keys!)
+.env
+
+# Database files
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ChromaDB
+chroma_db/
+
+# Streamlit cache
+.streamlit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp/
+
+# Downloaded images (if any)
+downloads/
+images/

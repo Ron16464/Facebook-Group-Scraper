@@ -1,0 +1,38 @@
+# Core dependencies
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Database
+chromadb==0.4.22
+sentence-transformers==2.3.1
+
+# LLM Providers
+anthropic==0.18.1
+openai==1.12.0
+google-generativeai==0.3.2
+
+# Image Processing
+Pillow==10.2.0
+
+# WordPress
+python-wordpress-xmlrpc==2.3
+
+# UI
+streamlit==1.31.0
+plotly==5.18.0
+pandas==2.2.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2024.1
+validators==0.22.0
+
+# Scraping & Processing
+beautifulsoup4==4.12.3
+html2text==2020.1.16
+
+# Scheduling
+schedule==1.2.0
+
+# Progress tracking
+tqdm==4.66.1
