@@ -2,6 +2,8 @@
 Enhanced Facebook Scraper with error handling, logging, and database integration
 """
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import time
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -12,6 +14,11 @@ from database.models import db
 from database.vector_store import vector_store
 
 
+class FacebookScraperError(Exception):
+    """Custom exception for Facebook scraper errors"""
+    pass
+
+
 class FacebookScraper:
     """Enhanced Facebook scraper with robust error handling"""
 
@@ -19,63 +26,112 @@ class FacebookScraper:
         self.rapidapi_key = rapidapi_key or settings.RAPIDAPI_KEY
         self.base_url = "https://facebook-scraper4.p.rapidapi.com/api/social-media/facebook-scraper"
 
-        self.headers = {
+        # Create session for connection pooling
+        self.session = requests.Session()
+
+        # Setup headers
+        self.session.headers.update({
             "x-rapidapi-key": self.rapidapi_key,
             "x-rapidapi-host": settings.RAPIDAPI_HOST,
-            "Content-Type": "application/json"
-        }
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        })
 
-    def _make_request(self, endpoint: str, facebook_url: str,
-                     max_retries: int = 3) -> Optional[Dict[str, Any]]:
-        """Make API request with retry logic and error handling"""
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,  # Wait 1, 2, 4 seconds between retries
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["POST", "GET"],
+            raise_on_status=False
+        )
+
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
+    def _make_request(self, endpoint: str, facebook_url: str) -> Optional[Dict[str, Any]]:
+        """
+        Make API request with automatic retry logic and error handling
+
+        Args:
+            endpoint: API endpoint (e.g., 'page-posts')
+            facebook_url: Facebook URL to scrape
+
+        Returns:
+            JSON response or None on error
+
+        Raises:
+            FacebookScraperError: On critical errors
+        """
+        # Validate input
+        if not facebook_url or not isinstance(facebook_url, str):
+            raise FacebookScraperError("facebook_url must be a non-empty string")
+
         url = f"{self.base_url}/{endpoint}"
-        payload = {"facebookUrl": facebook_url}
+        payload = {"facebookUrl": facebook_url.strip()}
 
-        for attempt in range(max_retries):
-            try:
-                response = requests.post(url, json=payload, headers=self.headers, timeout=30)
+        try:
+            # Session handles retries automatically via HTTPAdapter
+            response = self.session.post(url, json=payload, timeout=30)
 
-                if response.status_code == 200:
+            # Check for HTTP errors
+            if response.status_code == 200:
+                try:
                     return response.json()
-                elif response.status_code == 429:
-                    # Rate limit - wait and retry
-                    wait_time = (attempt + 1) * 5
-                    db.add_log("WARNING", "FacebookScraper",
-                             f"Rate limit hit, waiting {wait_time}s")
-                    time.sleep(wait_time)
-                elif response.status_code == 403:
+                except ValueError as e:
                     db.add_log("ERROR", "FacebookScraper",
-                             "Invalid API key or access denied",
+                             "Invalid JSON received from API",
                              f"URL: {facebook_url}")
-                    return None
-                else:
-                    db.add_log("ERROR", "FacebookScraper",
-                             f"Request failed with status {response.status_code}",
-                             f"URL: {facebook_url}, Response: {response.text}")
-                    if attempt < max_retries - 1:
-                        time.sleep(2)
-                        continue
-                    return None
+                    raise FacebookScraperError(f"Invalid JSON from API: {e}")
 
-            except requests.exceptions.Timeout:
-                db.add_log("WARNING", "FacebookScraper",
-                         f"Request timeout (attempt {attempt + 1}/{max_retries})",
-                         f"URL: {facebook_url}")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-                    continue
-                return None
-
-            except requests.exceptions.RequestException as e:
+            elif response.status_code == 403:
                 db.add_log("ERROR", "FacebookScraper",
-                         f"Request exception: {str(e)}",
+                         "Invalid API key or access denied",
                          f"URL: {facebook_url}")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-                    continue
+                raise FacebookScraperError("Invalid API key or access denied")
+
+            elif response.status_code == 429:
+                db.add_log("WARNING", "FacebookScraper",
+                         "Rate limit exceeded",
+                         f"URL: {facebook_url}")
                 return None
 
-        return None
+            else:
+                # Try to get error message from response
+                error_msg = None
+                try:
+                    json_body = response.json()
+                    error_msg = json_body.get("message") or str(json_body)
+                except:
+                    error_msg = response.text or str(response.status_code)
+
+                db.add_log("ERROR", "FacebookScraper",
+                         f"HTTP {response.status_code}: {error_msg}",
+                         f"URL: {facebook_url}")
+                return None
+
+        except requests.exceptions.Timeout as e:
+            db.add_log("ERROR", "FacebookScraper",
+                     "Request timeout",
+                     f"URL: {facebook_url}")
+            raise FacebookScraperError(f"Request timeout: {e}")
+
+        except requests.exceptions.RequestException as e:
+            db.add_log("ERROR", "FacebookScraper",
+                     f"Network error: {str(e)}",
+                     f"URL: {facebook_url}")
+            raise FacebookScraperError(f"Network error: {e}")
+
+        except FacebookScraperError:
+            # Re-raise our custom errors
+            raise
+
+        except Exception as e:
+            db.add_log("ERROR", "FacebookScraper",
+                     f"Unexpected error: {str(e)}",
+                     f"URL: {facebook_url}")
+            raise FacebookScraperError(f"Unexpected error: {e}")
 
     # ============================================
     # Page Scraping Methods
@@ -142,7 +198,11 @@ class FacebookScraper:
 
         try:
             # Get group posts (using page-posts endpoint - works for both pages and groups)
-            data = self.retrieve_page_posts(group_url)
+            try:
+                data = self.retrieve_page_posts(group_url)
+            except FacebookScraperError as e:
+                results['errors'].append(f"API error: {str(e)}")
+                return results
 
             if not data or 'data' not in data:
                 results['errors'].append("No data returned from API")
