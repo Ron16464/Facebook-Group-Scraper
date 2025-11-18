@@ -67,8 +67,8 @@ st.markdown("""
 
 
 # Initialize session state
-if 'group' not in st.session_state:
-    st.session_state.group = 'Dashboard'
+if 'page' not in st.session_state:
+    st.session_state.page = 'Dashboard'
 
 
 def show_dashboard():
@@ -146,7 +146,7 @@ def show_facebook_groups():
     st.header("📱 Facebook Groups Management")
 
     # Tabs for different actions
-    tab1, tab2, tab3 = st.tabs(["📋 View Pages", "➕ Add Page", "🔄 Scrape Content"])
+    tab1, tab2, tab3 = st.tabs(["📋 View Groups", "➕ Add Group", "🔄 Scrape Content"])
 
     with tab1:
         st.subheader("Configured Facebook Groups")
@@ -168,7 +168,7 @@ def show_facebook_groups():
                     with col2:
                         if st.button("🗑️ Delete", key=f"delete_{group['id']}"):
                             db.delete_facebook_group(group['id'])
-                            st.success("Page deleted!")
+                            st.success("Group deleted!")
                             st.rerun()
 
                         if group['is_active']:
@@ -180,12 +180,12 @@ def show_facebook_groups():
                                 db.update_facebook_group(group['id'], is_active=1)
                                 st.rerun()
         else:
-            st.info("No Facebook groups configured yet. Add one in the 'Add Page' tab!")
+            st.info("No Facebook groups configured yet. Add one in the 'Add Group' tab!")
 
     with tab2:
-        st.subheader("Add New Facebook Page")
+        st.subheader("Add New Facebook Group")
 
-        with st.form("add_page_form"):
+        with st.form("add_group_form"):
             group_url = st.text_input("Facebook Group URL*", placeholder="https://www.facebook.com/groups/YourGroup")
             group_name = st.text_input("Group Name", placeholder="e.g., Rhodes Tourism")
             group_category = st.selectbox("Category", [
@@ -194,11 +194,11 @@ def show_facebook_groups():
             ])
             description = st.text_area("Description (optional)")
 
-            submit = st.form_submit_button("➕ Add Page")
+            submit = st.form_submit_button("➕ Add Group")
 
             if submit:
                 if not group_url:
-                    st.error("Page URL is required!")
+                    st.error("Group URL is required!")
                 else:
                     group_id = db.add_facebook_group(
                         group_url=group_url,
@@ -564,28 +564,28 @@ def main():
         st.markdown("---")
 
         if st.button("🏠 Dashboard", use_container_width=True):
-            st.session_state.group = 'Dashboard'
+            st.session_state.page = 'Dashboard'
 
         if st.button("📱 Facebook Groups", use_container_width=True):
-            st.session_state.group = 'Facebook Groups'
+            st.session_state.page = 'Facebook Groups'
 
         if st.button("✍️ Generate Articles", use_container_width=True):
-            st.session_state.group = 'Articles'
+            st.session_state.page = 'Articles'
 
         if st.button("⚙️ Settings", use_container_width=True):
-            st.session_state.group = 'Settings'
+            st.session_state.page = 'Settings'
 
         st.markdown("---")
         st.caption("Tourism Content Generator v1.0")
 
     # Route to selected group
-    if st.session_state.group == 'Dashboard':
+    if st.session_state.page == 'Dashboard':
         show_dashboard()
-    elif st.session_state.group == 'Facebook Groups':
+    elif st.session_state.page == 'Facebook Groups':
         show_facebook_groups()
-    elif st.session_state.group == 'Articles':
+    elif st.session_state.page == 'Articles':
         show_article_generator()
-    elif st.session_state.group == 'Settings':
+    elif st.session_state.page == 'Settings':
         show_settings()
 
 

@@ -214,13 +214,13 @@ The dashboard will open in your browser at `http://localhost:8501`
 
 ### 1. **Add Facebook Groups**
 
-Navigate to **📱 Facebook Groups** → **Add Page** tab:
+Navigate to **📱 Facebook Groups** → **Add Group** tab:
 
 1. Enter the Facebook group URL (e.g., `https://www.facebook.com/groups/RhodesTourism`)
 2. Provide a friendly name (optional)
 3. Select category (restaurant, hotel, beach, etc.)
 4. Add description (optional)
-5. Click **Add Page**
+5. Click **Add Group**
 
 ### 2. **Scrape Content**
 
