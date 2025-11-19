@@ -1,0 +1,8 @@
+# GUI requirements for the web interface
+# Install with: pip install -r requirements-gui.txt
+
+# Core dependencies (from requirements.txt)
+requests>=2.28.0
+
+# Web interface
+streamlit>=1.28.0

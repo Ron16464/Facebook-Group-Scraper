@@ -2,6 +2,19 @@
 
 A simple Python wrapper for the [Facebook Scraper API](https://rapidapi.com/taskagi-2-taskagi-2-default/api/facebook-scraper4/) available on RapidAPI. This tool allows you to interact with Facebook Marketplace and Page data easily.
 
+## 🌐 Web Interface Available!
+
+**NEW:** Now includes a beautiful Streamlit web interface! No coding required.
+
+```bash
+pip install -r requirements-gui.txt
+streamlit run app.py
+```
+
+👉 See [GUI_README.md](GUI_README.md) for full web interface documentation.
+
+---
+
 ## Features
 
 - Retrieve information of a specific Marketplace listing.
@@ -12,9 +25,13 @@ A simple Python wrapper for the [Facebook Scraper API](https://rapidapi.com/task
 - Retrieve post, engagement, and comment information from a post URL.
 - Retrieve photos from a public Facebook profile.
 - Retrieve information from a public Facebook profile.
+- **NEW:** Web-based GUI with Streamlit
+- Type hints and comprehensive error handling
+- Full test coverage (18 unit tests)
 
 ## Table of Contents
 
+- [Web Interface](#-web-interface-available)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Setup](#setup)
