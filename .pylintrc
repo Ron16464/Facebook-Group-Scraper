@@ -1,0 +1,45 @@
+[MASTER]
+ignore=CVS,.git,__pycache__,.venv,venv,build,dist,*.egg-info
+jobs=1
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    too-few-public-methods,
+    line-too-long
+
+[REPORTS]
+output-format=text
+reports=no
+score=yes
+
+[REFACTORING]
+max-nested-blocks=5
+
+[BASIC]
+good-names=i,j,k,ex,_,url,id
+
+[FORMAT]
+max-line-length=88
+indent-string='    '
+
+[DESIGN]
+max-args=7
+max-attributes=10
+max-bool-expr=5
+max-branches=12
+max-locals=15
+max-parents=7
+max-public-methods=20
+max-returns=6
+max-statements=50
+min-public-methods=1
+
+[SIMILARITIES]
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+min-similarity-lines=4

@@ -2,6 +2,7 @@
 
 from facebook_scraper import FacebookScraper
 
+
 def main():
     rapidapi_key = "YOUR_RAPIDAPI_KEY"  # Replace with your RapidAPI key
     scraper = FacebookScraper(rapidapi_key)
@@ -10,6 +11,7 @@ def main():
     data = scraper.get_marketplace_item(facebook_url)
 
     print(data)
+
 
 if __name__ == "__main__":
     main()
